@@ -11,7 +11,7 @@ struct bloco{
 	bitset<32> R;
 };
 
-int TipoDeControleDeErro = 0;
+int TipoDeControleDeErro = 2;
 
 void AplicacaoTransmissora();
 void CamadaDeAplicacaoTransmissora(string mensagem);
@@ -60,9 +60,9 @@ void CamadaEnlaceDadosTransmissora(vector<bitset<8>> quadro){
 		case 1:
 			CamadaEnlaceDadosTransmissoraControleDeErroBitParidadeImpar(quadro);
 			break;
-		//case 2:
-			//
-			//break;
+		case 2:
+			CamadaEnlaceDadosTransmissoraControleDeErroCRC(quadro);
+			break;
 	}
 }
 
@@ -164,9 +164,9 @@ void CamadaEnlaceDadosReceptora(bloco *fluxoDeBits, int tamanho){
 		case 1:
 			CamadaEnlaceDadosReceptoraControleDeErroBitParidadeImpar(fluxoDeBits, tamanho);
 			break;
-		//case 2:
-			//
-			//break;
+		case 2:
+			CamadaEnlaceDadosReceptoraControleDeErroCRC(fluxoDeBits, tamanho);
+			break;
 	}
 }
 
