@@ -5,23 +5,32 @@
 #include <array>
 using namespace std;
 
-typedef struct bloco{
+struct bloco{
 	bitset<8> byte;
 	int paridade;
-	bitset<8> R;
-}Bloco;
+	bitset<32> R;
+};
+
+int TipoDeControleDeErro = 0;
+
 void AplicacaoTransmissora();
 void CamadaDeAplicacaoTransmissora(string mensagem);
 void CamadaEnlaceDadosTransmissora(vector<bitset<8>> quadro);
 
-//void MeioDeComunicacao(bloco fluxoDeBits[]);
-//void CamadaEnlaceDadosReceptora(FluxoBrutoDeBits[])
+void CamadaEnlaceDadosTransmissoraControleDeErroBitParidadePar(vector<bitset<8>> quadro);
+void CamadaEnlaceDadosTransmissoraControleDeErroBitParidadeImpar(vector<bitset<8>> quadro);
+void CamadaEnlaceDadosTransmissoraControleDeErroCRC(vector<bitset<8>> quadro);
 
-void CamadaDeAplicacaoReceptora(vector<bitset<8>> quadro);
+void MeioDeComunicacao(bloco *fluxoDeBits, int tamanho);
+void CamadaEnlaceDadosReceptora(bloco *fluxoDeBits, int tamanho);
+
+void CamadaEnlaceDadosReceptoraControleDeErroBitParidadePar(bloco *fluxoDeBits, int tamanho);
+void CamadaEnlaceDadosReceptoraControleDeErroBitParidadeImpar(bloco *fluxoDeBits, int tamanho);
+void CamadaEnlaceDadosReceptoraControleDeErroCRC(bloco *fluxoDeBits, int tamanho);
+
+void CamadaDeAplicacaoReceptora(bloco *fluxoDeBits, int tamanho);
 void AplicacaoReceptora(vector<char> mensagem);
-Bloco * CamadaEnlaceDadosTransmissoraControleDeErroCRC(Bloco * fluxoDeBits, int maxSize);
-Bloco * CamadaEnlaceDadosTransmissoraControleDeErroBitParidadePar(Bloco * fluxoDeBits, int maxSize);
-Bloco * CamadaEnlaceDadosTransmissoraControleDeErroBitParidadeImpar(Bloco * fluxoDeBits, int maxSize);
+
 vector<bitset<8>> chartobin(string mensagem);
 vector<char> bintochar(vector<bitset<8>> binarios);
 
@@ -44,87 +53,197 @@ void CamadaDeAplicacaoTransmissora(string mensagem){
 }
 
 void CamadaEnlaceDadosTransmissora(vector<bitset<8>> quadro){
-	int TipoDeControleDeErro = 2;
-	auto n = quadro.size();
-	Bloco * fluxoDeBits;
-	int i, j;
-	int cont=0;
-
-	fluxoDeBits = (Bloco*) malloc(n*sizeof(Bloco));
-
-	for(i=0; i<n; i++){
-				fluxoDeBits[i].byte = quadro[i];
-	}
-
 	switch(TipoDeControleDeErro){
 		case 0:
-			fluxoDeBits = CamadaEnlaceDadosTransmissoraControleDeErroBitParidadePar(fluxoDeBits, n);
-			/*
-			for(i=0; i<n; i++){
-				fluxoDeBits[i].byte = quadro[i];
-				for(j=0; j<8; j++){
-					if(fluxoDeBits[i].byte[j]==1){
-						cont++;
-					}
-				}
-				if(cont%2==0){
-					fluxoDeBits[i].paridade=0;
-				}
-				else{
-					fluxoDeBits[i].paridade=1;
-				}
-			}*/
+			CamadaEnlaceDadosTransmissoraControleDeErroBitParidadePar(quadro);
 			break;
 		case 1:
-			fluxoDeBits = CamadaEnlaceDadosTransmissoraControleDeErroBitParidadeImpar(fluxoDeBits, n);
-		/*
-			for(i=0; i<n; i++){
-				fluxoDeBits[i].byte = quadro[i];
-				for(j=0; j<8; j++){
-					if(fluxoDeBits[i].byte[j]==1){
-						cont++;
-					}
-				}
-				if(cont%2==0){
-					fluxoDeBits[i].paridade=1;
-				}
-				else{
-					fluxoDeBits[i].paridade=0;
-				}
-			}*/
+			CamadaEnlaceDadosTransmissoraControleDeErroBitParidadeImpar(quadro);
 			break;
-		
-		case 2:
-			fluxoDeBits = CamadaEnlaceDadosTransmissoraControleDeErroCRC(fluxoDeBits, n);
-
-			break;
+		//case 2:
+			//
+			//break;
 	}
-	//MeioDeComunicacao(fluxoDeBits);
 }
-/*
-void MeioDeComunicacao(bloco fluxoDeBits[]){
-	int erro, porcentagemDeErros;
-	int fluxoBrutoDeBitsPontoA[], fluxoBrutoDeBitsPontoB[];
-	porcentagemDeErros=0;
-	fluxoBrutoDeBitsPontoA=fluxoBrutoDeBits;
-	while(fluxoBrutoDeBitsPontoB.lenght()!=fluxoBrutoDeBitsPontoA.lenght()){
-		if((rand()%100)==a){
-			fluxoBrutoDeBitsPontoB += fluxoBrutoDeBitsPontoA;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CamadaEnlaceDadosTransmissoraControleDeErroBitParidadePar(vector<bitset<8>> quadro){
+	auto n = quadro.size();
+	bloco fluxoDeBits[n];
+	int i, j;
+	int cont;
+	for(i=0; i<n; i++){
+		cont=0;
+		fluxoDeBits[i].byte = quadro[i];
+		for(j=0; j<8; j++){
+			if(fluxoDeBits[i].byte[j]==1){
+				cont++;
+			}
+		}
+		if(cont%2==0){
+			fluxoDeBits[i].paridade=0;
 		}
 		else{
-			fluxoBrutoDeBitsPontoB;
+			fluxoDeBits[i].paridade=1;
+		}
+	}
+	MeioDeComunicacao(fluxoDeBits, n);
+}
+
+void CamadaEnlaceDadosTransmissoraControleDeErroBitParidadeImpar(vector<bitset<8>> quadro){
+	auto n = quadro.size();
+	bloco fluxoDeBits[n];
+	int i, j;
+	int cont;
+	for(i=0; i<n; i++){
+		cont=0;
+		fluxoDeBits[i].byte = quadro[i];
+		for(j=0; j<8; j++){
+			if(fluxoDeBits[i].byte[j]==1){
+				cont++;
+			}
+		}
+		if(cont%2==0){
+			fluxoDeBits[i].paridade=1;
+		}
+		else{
+			fluxoDeBits[i].paridade=0;
+		}
+	}
+	MeioDeComunicacao(fluxoDeBits, n);
+}
+
+void CamadaEnlaceDadosTransmissoraControleDeErroCRC(vector<bitset<8>> quadro){
+	auto n = quadro.size();
+	bloco fluxoDeBits[n];
+	int numbaux, r;
+	int i, j;
+	for(i=0; i<n; i++){
+		fluxoDeBits[i].byte = quadro[i];
+		numbaux = (int)(quadro[i].to_ulong());
+		r = numbaux % (2^33+0x04C11DB7);
+		fluxoDeBits[i].R = r;
+
+	}
+	MeioDeComunicacao(fluxoDeBits, n);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+void MeioDeComunicacao(bloco *fluxoDeBits, int tamanho){
+	int i, j, porcentagemDeErros;
+	porcentagemDeErros = 0;
+
+	cout << "enviado:\n";
+	for(i=0; i<tamanho; i++){
+		cout << fluxoDeBits[i].byte << " paridade " << fluxoDeBits[i].paridade << "\n";
+	}
+
+	for(i=0; i<tamanho; i++){
+		for(j=0; j<8; j++){
+			if((rand()%100)<porcentagemDeErros){
+				fluxoDeBits[i].byte[j]==0?fluxoDeBits[i].byte[j]=true:fluxoDeBits[i].byte[j]=false;
+			}
 		}
 	}
 
-	CamadaEnlaceDadosReceptora();
+	cout << "recebido:\n";
+	for(i=0; i<tamanho; i++){
+		cout << fluxoDeBits[i].byte << " paridade " << fluxoDeBits[i].paridade << "\n";
+	}
+
+	CamadaEnlaceDadosReceptora(fluxoDeBits, tamanho);
 }
 
-void CamadaEnlaceDadosReceptora(FluxoBrutoDeBits[]){
-	//
-	CamadaDeAplicacaoReceptora(quadro);
-}*/
+void CamadaEnlaceDadosReceptora(bloco *fluxoDeBits, int tamanho){
+	switch(TipoDeControleDeErro){
+		case 0:
+			CamadaEnlaceDadosReceptoraControleDeErroBitParidadePar(fluxoDeBits, tamanho);
+			break;
+		case 1:
+			CamadaEnlaceDadosReceptoraControleDeErroBitParidadeImpar(fluxoDeBits, tamanho);
+			break;
+		//case 2:
+			//
+			//break;
+	}
+}
 
-void CamadaDeAplicacaoReceptora(vector<bitset<8>> quadro){
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CamadaEnlaceDadosReceptoraControleDeErroBitParidadePar(bloco *fluxoDeBits, int tamanho){
+	bitset<8> byteaux (string("00100011"));
+	int i, j, paridaux;
+	int cont;
+	for(i=0; i<tamanho; i++){
+		cont=0;
+		for(j=0; j<8; j++){
+			if(fluxoDeBits[i].byte[j]==1){
+				cont++;
+			}
+		}
+		if(cont%2==0){
+			paridaux=0;
+		}
+		else{
+			paridaux=1;
+		}
+		if(paridaux!=fluxoDeBits[i].paridade){
+			fluxoDeBits[i].byte=byteaux;
+		}
+	}
+	CamadaDeAplicacaoReceptora(fluxoDeBits, tamanho);
+}
+
+void CamadaEnlaceDadosReceptoraControleDeErroBitParidadeImpar(bloco *fluxoDeBits, int tamanho){
+	bitset<8> byteaux (string("00100011"));
+	int i, j, paridaux;
+	int cont;
+	for(i=0; i<tamanho; i++){
+		cont=0;
+		for(j=0; j<8; j++){
+			if(fluxoDeBits[i].byte[j]==1){
+				cont++;
+			}
+		}
+		if(cont%2==0){
+			paridaux=1;
+		}
+		else{
+			paridaux=0;
+		}
+		if(paridaux!=fluxoDeBits[i].paridade){
+			fluxoDeBits[i].byte=byteaux;
+		}
+	}
+	CamadaDeAplicacaoReceptora(fluxoDeBits, tamanho);
+}
+
+void CamadaEnlaceDadosReceptoraControleDeErroCRC(bloco *fluxoDeBits, int tamanho){
+	bitset<8> byteaux (string("00100011"));
+	int i, r, d;
+
+	for(i=0; i<tamanho; i++){
+		r = (int)(fluxoDeBits[i].R.to_ulong());
+		d = (int)(fluxoDeBits[i].byte.to_ulong());
+		if((2^33+0x04C11DB7)%(d+r)!=0){
+			fluxoDeBits[i].byte=byteaux;
+		}
+
+	}
+
+	CamadaDeAplicacaoReceptora(fluxoDeBits, tamanho);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CamadaDeAplicacaoReceptora(bloco *fluxoDeBits, int tamanho){
+	vector<bitset<8>> quadro;
+	int i;
+	for(i=0; i<tamanho; i++){
+		quadro.push_back(fluxoDeBits[i].byte);
+	}
 	vector<char> mensagem;
 	mensagem = bintochar(quadro);
 	AplicacaoReceptora(mensagem);
@@ -166,56 +285,4 @@ vector<char> bintochar(vector<bitset<8>> binarios){
         chars.push_back(number);
     }
     return chars;
-}
-
-Bloco * CamadaEnlaceDadosTransmissoraControleDeErroCRC(Bloco * fluxoDeBits, int maxSize){
-	int i, j;
-
-	for(i = 0; i<maxSize; i++){
-		for
-	}
-
-	return fluxoDeBits;
-}
-
-Bloco * CamadaEnlaceDadosTransmissoraControleDeErroBitParidadePar(Bloco * fluxoDeBits, int maxSize){
-	int i, j;
-	int cont=0;
-
-	for(i=0; i<maxSize; i++){
-				for(j=0; j<8; j++){
-					if(fluxoDeBits[i].byte[j]==1){
-						cont++;
-					}
-				}
-				if(cont%2==0){
-					fluxoDeBits[i].paridade=0;
-				}
-				else{
-					fluxoDeBits[i].paridade=1;
-				}
-	}
-
-	return fluxoDeBits;
-}
-
-Bloco * CamadaEnlaceDadosTransmissoraControleDeErroBitParidadeImpar(Bloco * fluxoDeBits, int maxSize){
-	int i, j;
-	int cont=0;
-
-	for(i=0; i<maxSize; i++){
-				for(j=0; j<8; j++){
-					if(fluxoDeBits[i].byte[j]==1){
-						cont++;
-					}
-				}
-				if(cont%2==0){
-					fluxoDeBits[i].paridade=1;
-				}
-				else{
-					fluxoDeBits[i].paridade=0;
-				}
-	}
-
-	return fluxoDeBits;
 }
